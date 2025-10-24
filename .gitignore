@@ -1,0 +1,27 @@
+# Binaries built by Go
+/bin/
+/build/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binaries and coverage files
+*.test
+*.out
+coverage/
+
+# Dependency directories
+/vendor/
+
+# IDE/editor cruft
+.vscode/
+.idea/
+*.swp
+
+# Local environment files
+.env
+
+# macOS artifacts
+.DS_Store
