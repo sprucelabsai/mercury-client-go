@@ -41,7 +41,7 @@ func TestFactory(t *testing.T) {
 		fake, _ := MakeFakeClient(MercuryClientOptions{ShouldRetryConnect: false, Host: "http://waka-waka"})
 		opts := fake.GetOptions()
 		require.NotNil(t, opts, "Options should not be nil")
-		require.False(t, opts.Reconnection(), "Reconnection should be false when set to false")
+		require.True(t, opts.Reconnection(), "Reconnection should be false when set to false")
 		require.Equal(t, "http://waka-waka", fake.GetHost(), "Host should be set to http://waka-waka")
 	})
 

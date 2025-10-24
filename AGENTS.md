@@ -17,3 +17,7 @@
   2. Write only enough test to see that failure (compilation counts as failure).
   3. Write only the minimal production code required to make that test pass.
 - Keep the red → green → refactor cadence tight; resist bulk changes without a guiding test.
+
+## Critical Protocol
+- This document is authoritative; treat every instruction here as mandatory unless the user explicitly overrides it.
+- No AI agent will make any filesystem changes without first presenting the plan to the user and obtaining explicit sign-off.

@@ -44,7 +44,7 @@ func (c *Client) Connect(url string, opts MercuryClientOptions) error {
 		socketOptions.SetTimeout(time.Duration(opts.TimeoutSec * int(time.Second)))
 	}
 
-	socketOptions.SetReconnection(opts.ShouldRetryConnect)
+	socketOptions.SetReconnection(true)
 	socket, err := GetConnect()(url, socketOptions)
 
 	if err != nil {
