@@ -59,8 +59,7 @@ func TestFactory(t *testing.T) {
 
 	t.Run("can connect and disconnect client", func(t *testing.T) {
 		beforeEach(t)
-		client, err := MakeClientWithTestHost()
-		require.NoError(t, err, "Factory.Client should not return an error")
+		client := MakeClientWithTestHost(t)
 		require.True(t, client.IsConnected(), "Client should be connected on construction")
 		client.Disconnect()
 		require.False(t, client.IsConnected(), "Client should be disconnected after disconnect")
@@ -78,7 +77,7 @@ func TestFactory(t *testing.T) {
 
 	})
 
-	t.Run("defaults host is https://mercury.spruce.ai", func(t *testing.T) {
+	t.Run("defaults host is https_//mercury.spruce.ai", func(t *testing.T) {
 		beforeEach(t)
 		fake, _ := MakeFakeClient()
 		require.Equal(t, "https://mercury.spruce.ai", fake.GetHost(), "Default host should be https://mercury.spruce.ai")
@@ -86,7 +85,7 @@ func TestFactory(t *testing.T) {
 
 	t.Run("can emit whoami and get back anon", func(t *testing.T) {
 		beforeEach(t)
-		client, _ := MakeClientWithTestHost()
+		client := MakeClientWithTestHost(t)
 		_, authType := emitWhoAmI(t, client)
 		require.Equal(t, "anonymous", authType, "Auth should be anonymous")
 		client.Disconnect()
@@ -94,7 +93,7 @@ func TestFactory(t *testing.T) {
 
 	t.Run("can login and get back whoami", func(t *testing.T) {
 		beforeEach(t)
-		client, person, _ := loginAsDemoPerson("+1 555-555-5555")
+		client, person, _ := loginAsDemoPerson(t, "+1 555-555-5555")
 		person2, _ := emitWhoAmI(t, client)
 		require.Equal(t, person.Id, person2.Id, "Person id should match")
 		client.Disconnect()
@@ -102,12 +101,12 @@ func TestFactory(t *testing.T) {
 
 	t.Run("can authenticate as person in new client", func(t *testing.T) {
 		beforeEach(t)
-		c, person, token := loginAsDemoPerson("+1 555-555-5555")
+		c, person, token := loginAsDemoPerson(t, "+1 555-555-5555")
 		c.Disconnect()
 
 		fmt.Println("Logged in as person:", person)
 
-		client, _ := MakeClientWithTestHost()
+		client := MakeClientWithTestHost(t)
 		client.Authenticate(AuthenticatePayload{
 			Token: token,
 		})
@@ -120,7 +119,7 @@ func TestFactory(t *testing.T) {
 
 	t.Run("Remote throwing should return error", func(t *testing.T) {
 		beforeEach(t)
-		client, _ := MakeClientWithTestHost()
+		client := MakeClientWithTestHost(t)
 		_, err := client.Emit("this-event-does-not-exist::v2020_12_25")
 		require.Error(t, err, "Emitting non-existent event should return an error")
 
@@ -232,7 +231,7 @@ func emitSkillEvent(t *testing.T, skill1Client MercuryClient, fqen string, orgId
 }
 
 func loginCreatOrgSetup2SkillsAndRegisterEventContractAsSkill1(t *testing.T) (*spruce.Organization, MercuryClient, MercuryClient, string) {
-	client, _, _ := loginAsDemoPerson("+1 555-555-5555")
+	client, _, _ := loginAsDemoPerson(t, "+1 555-555-5555")
 	org := seedRandomOrg(t, client)
 	skill1Client := seedSkillInstallToOrgAndLoginAsSkill(t, client, org)
 	skill2Client := seedSkillInstallToOrgAndLoginAsSkill(t, client, org)
@@ -269,13 +268,13 @@ func seedSkillInstallToOrgAndLoginAsSkill(t *testing.T, client MercuryClient, or
 	err = installSkill(client, org.Id, skill.Id)
 	require.NoError(t, err, "Installing skill should not return an error")
 
-	skill1Client, err := loginAsSkill(skill)
+	skill1Client, err := loginAsSkill(t, skill)
 	require.NoError(t, err, "Logging in as skill1 should not return an error")
 	return skill1Client
 }
 
-func loginAsSkill(skill *spruce.Skill) (MercuryClient, error) {
-	client, _ := MakeClientWithTestHost()
+func loginAsSkill(t *testing.T, skill *spruce.Skill) (MercuryClient, error) {
+	client := MakeClientWithTestHost(t)
 	_, err := client.Authenticate(AuthenticatePayload{
 		SkillId: skill.Id,
 		ApiKey:  skill.ApiKey,
@@ -284,8 +283,9 @@ func loginAsSkill(skill *spruce.Skill) (MercuryClient, error) {
 	return client, err
 }
 
-func loginAsDemoPerson(phone string) (MercuryClient, *spruce.Person, string) {
-	client, _ := MakeClientWithTestHost()
+func loginAsDemoPerson(t *testing.T, phone string) (MercuryClient, *spruce.Person, string) {
+	fmt.Println("Logging in as demo person with phone:", phone)
+	client := MakeClientWithTestHost(t)
 	person, token := login(client, phone)
 	return client, person, token
 }
@@ -408,13 +408,20 @@ func MakeFakeClient(opts ...MercuryClientOptions) (*FakeSocketClient, MercuryCli
 	return fake, client
 }
 
-func MakeClientWithTestHost(opts ...MercuryClientOptions) (MercuryClient, error) {
-	host := os.Getenv("TEST_HOST")
-	if host == "" {
-		return nil, fmt.Errorf("TEST_HOST environment variable is not set")
-	}
+func MakeClientWithTestHost(t *testing.T, opts ...MercuryClientOptions) MercuryClient {
 
-	return MakeMercuryClient(append(opts, MercuryClientOptions{Host: host})...)
+	t.Helper()
+	host := os.Getenv("TEST_HOST")
+
+	require.NotEmpty(t, host, "TEST_HOST environment variable must be set for tests")
+	fmt.Println("Making client with test host " + host)
+
+	client, err := MakeMercuryClient(append(opts, MercuryClientOptions{Host: host})...)
+	require.NoError(t, err, "Making Mercury client with test host should not return an error")
+
+	fmt.Println("Made client with test host: ", host)
+
+	return client
 }
 
 type EventContract map[string]any
