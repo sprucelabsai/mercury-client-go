@@ -8,6 +8,8 @@
 ## Environment Setup
 - Mirror the workspace convention: tests expect a `.env` file at the repo root with `TEST_HOST` pointing to the running Mercury Theatre (e.g. `http://127.0.0.1:8081`).
 - `factory_test.go` loads that file via `godotenv`, so missing or stale values lead to connection failures and nil pointer panics.
+- The Mercury Theatre is the local mono-repo environment that boots the `spruce-mercury-skill` (the Mercury API) along with supporting skills; keep it running on localhost while developing or exercising integration tests here.
+- This client talks directly to that Mercury API (`spruce-mercury-skill`) at whatever `TEST_HOST` points to—normally the theatre’s default `http://127.0.0.1:8081`.
 
 ## Preferred Workflow
 - Follow the three laws of TDD:
