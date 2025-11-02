@@ -3,7 +3,7 @@ package testkit
 import (
 	"fmt"
 
-	"github.com/sprucelabsai/mercury-client-go/pkg/mercury"
+	"github.com/sprucelabsai-community/mercury-client-go/pkg/mercury"
 )
 
 // MakeFakeClient creates a Mercury client wired to the in-memory FakeSocketClient.

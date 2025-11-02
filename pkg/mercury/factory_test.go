@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	mercury "github.com/sprucelabsai/mercury-client-go/pkg/mercury"
-	"github.com/sprucelabsai/mercury-client-go/pkg/mercury/internal/helpers"
-	"github.com/sprucelabsai/mercury-client-go/pkg/testkit"
+	mercury "github.com/sprucelabsai-community/mercury-client-go/pkg/mercury"
+	"github.com/sprucelabsai-community/mercury-client-go/pkg/mercury/internal/helpers"
+	"github.com/sprucelabsai-community/mercury-client-go/pkg/testkit"
 	"github.com/stretchr/testify/require"
 )
 

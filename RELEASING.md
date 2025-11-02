@@ -31,12 +31,12 @@ git push origin vX.Y.Z
 
 ## 5. Consume from Other Projects
 - In the project that depends on this client, run:  
-  `go get github.com/sprucelabsai/mercury-client-go@vX.Y.Z`
+  `go get github.com/sprucelabsai-community/mercury-client-go@vX.Y.Z`
 - Commit the updated `go.mod`/`go.sum` files in that consumer repo.
 - When updating later, repeat the release process and bump the version in the consuming project.
 
 ## 6. Verify the Published Module
-- Run `go list -m github.com/sprucelabsai/mercury-client-go@vX.Y.Z` to confirm the proxy can resolve the new tag.
+- Run `go list -m github.com/sprucelabsai-community/mercury-client-go@vX.Y.Z` to confirm the proxy can resolve the new tag.
 - If the command fails, double-check that the tag is reachable (public repo or authenticated GOPRIVATE setup) and that CI finished indexing the tag on GitHub.
 
 Following these steps keeps the Mercury Go client reproducible for downstream projects and makes it easy to automate releases later.

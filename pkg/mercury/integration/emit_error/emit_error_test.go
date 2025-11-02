@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sprucelabsai/mercury-client-go/pkg/mercury/internal/helpers"
+	"github.com/sprucelabsai-community/mercury-client-go/pkg/mercury/internal/helpers"
 )
 
 func TestEmitNonexistentEventReturnsError(t *testing.T) {

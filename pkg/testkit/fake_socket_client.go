@@ -3,7 +3,7 @@ package testkit
 import (
 	"sync"
 
-	"github.com/sprucelabsai/mercury-client-go/pkg/mercury"
+	"github.com/sprucelabsai-community/mercury-client-go/pkg/mercury"
 	ioClient "github.com/zishang520/socket.io/clients/socket/v3"
 	socketTypes "github.com/zishang520/socket.io/v3/pkg/types"
 )

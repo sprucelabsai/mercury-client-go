@@ -5,8 +5,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	mercury "github.com/sprucelabsai/mercury-client-go/pkg/mercury"
-	"github.com/sprucelabsai/mercury-client-go/pkg/mercury/internal/helpers"
+	mercury "github.com/sprucelabsai-community/mercury-client-go/pkg/mercury"
+	"github.com/sprucelabsai-community/mercury-client-go/pkg/mercury/internal/helpers"
 )
 
 func TestListenerReceivesTargetAndPayload(t *testing.T) {

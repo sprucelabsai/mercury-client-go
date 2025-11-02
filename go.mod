@@ -1,4 +1,4 @@
-module github.com/sprucelabsai/mercury-client-go
+module github.com/sprucelabsai-community/mercury-client-go
 
 go 1.24.3
 

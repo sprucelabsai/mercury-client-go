@@ -7,9 +7,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/joho/godotenv"
+	mercury "github.com/sprucelabsai-community/mercury-client-go/pkg/mercury"
 	spruce "github.com/sprucelabsai-community/spruce-core-schemas/v41/pkg/schemas"
 	schemas "github.com/sprucelabsai-community/spruce-core-schemas/v41/pkg/schemas/spruce/v2020_07_22"
-	mercury "github.com/sprucelabsai/mercury-client-go/pkg/mercury"
 	"github.com/stretchr/testify/require"
 	ioClient "github.com/zishang520/socket.io/clients/socket/v3"
 )
