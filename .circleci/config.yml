@@ -1,0 +1,68 @@
+version: 2.1
+
+executors:
+  go-executor:
+    docker:
+      - image: cimg/go:1.25
+    working_directory: ~/project
+
+commands:
+  restore-go-cache:
+    steps:
+      - restore_cache:
+          keys:
+            - go-mod-v1-{{ arch }}-{{ .Branch }}-{{ checksum "go.sum" }}
+            - go-mod-v1-{{ arch }}-{{ .Branch }}
+            - go-mod-v1-{{ arch }}
+  save-go-cache:
+    steps:
+      - save_cache:
+          key: go-mod-v1-{{ arch }}-{{ .Branch }}-{{ checksum "go.sum" }}
+          paths:
+            - ~/.cache/go-build
+            - ~/go/pkg/mod
+
+jobs:
+  unit-tests:
+    executor: go-executor
+    steps:
+      - checkout
+      - restore-go-cache
+      - run:
+          name: Run unit tests
+          command: go test ./pkg/mercury
+      - save-go-cache
+
+  integration-tests:
+    executor: go-executor
+    steps:
+      - checkout
+      - restore-go-cache
+      - run:
+          name: Verify TEST_HOST is configured
+          command: |
+            if [ -z "${TEST_HOST}" ]; then
+              echo "TEST_HOST environment variable is required for integration tests." >&2
+              exit 1
+            fi
+      - run:
+          name: Wait for Mercury Theatre
+          command: |
+            timeout 180 bash -c 'until curl -s "${TEST_HOST}" >/dev/null 2>&1; do echo "Waiting for Mercury Theatre at ${TEST_HOST}"; sleep 5; done'
+      - run:
+          name: Run integration suites
+          command: |
+            set -euo pipefail
+            for pkg in $(go list ./pkg/mercury/integration/...); do
+              echo "Running integration tests in ${pkg}"
+              go test "$pkg"
+            done
+      - save-go-cache
+
+workflows:
+  build-and-test:
+    jobs:
+      - unit-tests
+      - integration-tests:
+          requires:
+            - unit-tests
