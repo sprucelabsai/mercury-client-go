@@ -6,22 +6,21 @@ import (
 	"github.com/stretchr/testify/require"
 
 	mercury "github.com/sprucelabsai-community/mercury-client-go/pkg/mercury"
-	"github.com/sprucelabsai-community/mercury-client-go/pkg/mercury/internal/helpers"
+	"github.com/sprucelabsai-community/mercury-client-go/pkg/testkit"
 )
 
 func TestAuthenticateWithExistingToken(t *testing.T) {
-	helpers.LoadTestEnv(t)
-	helpers.SetupSocketConnect(t)
+	testkit.BeforeEach(t)
 
-	initialClient, person, token := helpers.LoginAsDemoPerson(t, "+1 555-555-5555")
+	initialClient, person, token := testkit.LoginAsDemoPerson(t, "+1 555-555-5555")
 	initialClient.Disconnect()
 
-	client := helpers.MakeClientWithTestHost(t)
+	client := testkit.MakeClientWithTestHost(t)
 	defer client.Disconnect()
 
 	_, err := client.Authenticate(mercury.AuthenticatePayload{Token: token})
 	require.NoError(t, err, "Authenticating with token should not error")
 
-	who, _ := helpers.EmitWhoAmI(t, client)
+	who, _ := testkit.EmitWhoAmI(t, client)
 	require.Equal(t, person.Id, who.Id, "Person id should match")
 }

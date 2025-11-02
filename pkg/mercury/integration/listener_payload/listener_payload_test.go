@@ -6,14 +6,13 @@ import (
 	"github.com/stretchr/testify/require"
 
 	mercury "github.com/sprucelabsai-community/mercury-client-go/pkg/mercury"
-	"github.com/sprucelabsai-community/mercury-client-go/pkg/mercury/internal/helpers"
+	"github.com/sprucelabsai-community/mercury-client-go/pkg/testkit"
 )
 
 func TestListenerReceivesTargetAndPayload(t *testing.T) {
-	helpers.LoadTestEnv(t)
-	helpers.SetupSocketConnect(t)
+	testkit.BeforeEach(t)
 
-	org, skill1Client, skill2Client, fqen := helpers.LoginCreateOrgSetupTwoSkills(t)
+	org, skill1Client, skill2Client, fqen := testkit.LoginCreateOrgSetupTwoSkills(t)
 	defer skill1Client.Disconnect()
 	defer skill2Client.Disconnect()
 
@@ -21,7 +20,7 @@ func TestListenerReceivesTargetAndPayload(t *testing.T) {
 	skill2Client.On(fqen, func(targetAndPayload mercury.TargetAndPayload) any {
 		captured = targetAndPayload
 		return map[string]any{
-			"messages": []string{helpers.GenerateRandomID()},
+			"messages": []string{testkit.GenerateRandomID()},
 		}
 	})
 
@@ -30,7 +29,7 @@ func TestListenerReceivesTargetAndPayload(t *testing.T) {
 			"organizationId": org.Id,
 		},
 		Payload: map[string]any{
-			"message": helpers.GenerateRandomID(),
+			"message": testkit.GenerateRandomID(),
 		},
 	}
 

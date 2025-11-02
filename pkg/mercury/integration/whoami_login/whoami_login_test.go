@@ -3,18 +3,16 @@ package whoami_login_test
 import (
 	"testing"
 
+	"github.com/sprucelabsai-community/mercury-client-go/pkg/testkit"
 	"github.com/stretchr/testify/require"
-
-	"github.com/sprucelabsai-community/mercury-client-go/pkg/mercury/internal/helpers"
 )
 
 func TestWhoAmILoggedIn(t *testing.T) {
-	helpers.LoadTestEnv(t)
-	helpers.SetupSocketConnect(t)
+	testkit.BeforeEach(t)
 
-	client, person, _ := helpers.LoginAsDemoPerson(t, "+1 555-555-5555")
+	client, person, _ := testkit.LoginAsDemoPerson(t, "+1 555-555-5555")
 	defer client.Disconnect()
 
-	who, _ := helpers.EmitWhoAmI(t, client)
+	who, _ := testkit.EmitWhoAmI(t, client)
 	require.Equal(t, person.Id, who.Id, "Person id should match")
 }

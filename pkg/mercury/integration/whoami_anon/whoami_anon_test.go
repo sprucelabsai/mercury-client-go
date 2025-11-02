@@ -5,16 +5,15 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sprucelabsai-community/mercury-client-go/pkg/mercury/internal/helpers"
+	"github.com/sprucelabsai-community/mercury-client-go/pkg/testkit"
 )
 
 func TestWhoAmIAnonymous(t *testing.T) {
-	helpers.LoadTestEnv(t)
-	helpers.SetupSocketConnect(t)
+	testkit.BeforeEach(t)
 
-	client := helpers.MakeClientWithTestHost(t)
+	client := testkit.MakeClientWithTestHost(t)
 	defer client.Disconnect()
 
-	_, authType := helpers.EmitWhoAmI(t, client)
+	_, authType := testkit.EmitWhoAmI(t, client)
 	require.Equal(t, "anonymous", authType, "Auth should be anonymous")
 }

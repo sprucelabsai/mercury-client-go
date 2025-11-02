@@ -1,52 +1,56 @@
-package helpers
+package testkit
 
 import (
 	"fmt"
 	"os"
 	"testing"
 
-	"github.com/google/uuid"
-	"github.com/joho/godotenv"
-	mercury "github.com/sprucelabsai-community/mercury-client-go/pkg/mercury"
 	spruce "github.com/sprucelabsai-community/spruce-core-schemas/v41/pkg/schemas"
 	schemas "github.com/sprucelabsai-community/spruce-core-schemas/v41/pkg/schemas/spruce/v2020_07_22"
+
+	"github.com/google/uuid"
+	"github.com/joho/godotenv"
+	"github.com/sprucelabsai-community/mercury-client-go/pkg/mercury"
 	"github.com/stretchr/testify/require"
-	ioClient "github.com/zishang520/socket.io/clients/socket/v3"
 )
 
-// EventContract represents an event contract payload.
-type EventContract map[string]any
+func MakeFakeClient(opts ...mercury.MercuryClientOptions) (*FakeSocketClient, mercury.MercuryClient, error) {
+	mercury.SetConnect(FakeSocketConnect)
 
-// SetupSocketConnect configures the mercury client to use the socket.io default connect.
-func SetupSocketConnect(t *testing.T) {
+	client, err := mercury.MakeMercuryClient(opts...)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	fake := LastFakeSocket()
+	if fake == nil {
+		return nil, nil, fmt.Errorf("fake socket not captured")
+	}
+
+	return fake, client, nil
+}
+
+func ResetConnect() {
+	mercury.SetConnect(nil)
+	setLastFakeSocket(nil)
+}
+
+func BeforeEach(t *testing.T) {
 	t.Helper()
-	mercury.SetConnect(func(url string, opts ioClient.OptionsInterface) (mercury.Socket, error) {
-		if opts == nil {
-			opts = ioClient.DefaultOptions()
-		}
-		opts.SetForceNew(true)
-		opts.SetMultiplex(false)
-		opts.SetReconnection(true)
-
-		socket, err := ioClient.Connect(url, opts)
-		if err != nil {
-			return nil, err
-		}
-		return mercury.NewSocketIOClient(socket), nil
-	})
-
+	loadTestEnv(t)
+	ResetConnect()
 	t.Cleanup(func() {
-		mercury.SetConnect(nil)
+		ResetConnect()
 	})
 }
 
-// LoadTestEnv hydrates environment variables required by integration tests.
-func LoadTestEnv(t *testing.T) {
+type EventContract map[string]any
+
+func loadTestEnv(t *testing.T) {
 	t.Helper()
 	_ = godotenv.Load("../../../../.env", "../.env", ".env")
 }
 
-// MakeClientWithTestHost constructs a mercury client using the TEST_HOST env var.
 func MakeClientWithTestHost(t *testing.T, opts ...mercury.MercuryClientOptions) mercury.MercuryClient {
 	t.Helper()
 	host := os.Getenv("TEST_HOST")
@@ -62,12 +66,10 @@ func MakeClientWithTestHost(t *testing.T, opts ...mercury.MercuryClientOptions) 
 	return client
 }
 
-// GenerateRandomID produces a UUID string for tests.
 func GenerateRandomID() string {
 	return uuid.NewString()
 }
 
-// EmitWhoAmI returns the person and auth type from the whoami event.
 func EmitWhoAmI(t *testing.T, client mercury.MercuryClient) (*spruce.Person, string) {
 	t.Helper()
 	auth, err := client.Emit("whoami::v2020_12_25")
@@ -91,7 +93,6 @@ func EmitWhoAmI(t *testing.T, client mercury.MercuryClient) (*spruce.Person, str
 	return person, authType
 }
 
-// Login performs the PIN flow for the provided phone number and returns the person and token.
 func Login(client mercury.MercuryClient, phone string) (*spruce.Person, string) {
 	requestPinResponse, _ := client.Emit("request-pin::v2020_12_25", mercury.TargetAndPayload{
 		Payload: map[string]any{
@@ -116,7 +117,6 @@ func Login(client mercury.MercuryClient, phone string) (*spruce.Person, string) 
 	return person, token
 }
 
-// LoginAsDemoPerson logs in a demo person and returns the client, person, and auth token.
 func LoginAsDemoPerson(t *testing.T, phone string) (mercury.MercuryClient, *spruce.Person, string) {
 	t.Helper()
 	fmt.Println("Logging in as demo person with phone:", phone)
@@ -125,7 +125,6 @@ func LoginAsDemoPerson(t *testing.T, phone string) (mercury.MercuryClient, *spru
 	return client, person, token
 }
 
-// LoginAsSkill authenticates a skill client via API key.
 func LoginAsSkill(t *testing.T, skill *spruce.Skill) (mercury.MercuryClient, error) {
 	t.Helper()
 	client := MakeClientWithTestHost(t)
@@ -137,7 +136,6 @@ func LoginAsSkill(t *testing.T, skill *spruce.Skill) (mercury.MercuryClient, err
 	return client, err
 }
 
-// InstallSkill installs a skill in the given organization.
 func InstallSkill(client mercury.MercuryClient, orgID string, skillID string) error {
 	_, err := client.Emit("install-skill::v2020_12_25", mercury.TargetAndPayload{
 		Target: map[string]any{
@@ -150,7 +148,6 @@ func InstallSkill(client mercury.MercuryClient, orgID string, skillID string) er
 	return err
 }
 
-// SeedRandomSkill registers a random skill for tests.
 func SeedRandomSkill(client mercury.MercuryClient) (*spruce.Skill, error) {
 	skillName := fmt.Sprintf("Test Skill %s", uuid.NewString())
 	results, err := client.Emit("register-skill::v2020_12_25", mercury.TargetAndPayload{
@@ -178,7 +175,6 @@ func SeedRandomSkill(client mercury.MercuryClient) (*spruce.Skill, error) {
 	return skill, nil
 }
 
-// SeedRandomOrg creates a random organization and returns it.
 func SeedRandomOrg(t *testing.T, client mercury.MercuryClient) *spruce.Organization {
 	t.Helper()
 	orgName := fmt.Sprintf("Test Org %s", GenerateRandomID())
@@ -201,7 +197,6 @@ func SeedRandomOrg(t *testing.T, client mercury.MercuryClient) *spruce.Organizat
 	return org
 }
 
-// EmitSkillEvent triggers an event from skill1 to skill2 and returns the responses.
 func EmitSkillEvent(t *testing.T, skillClient mercury.MercuryClient, fqen string, orgID string, message string) []mercury.ResponsePayload {
 	t.Helper()
 	results, err := skillClient.Emit(fqen, mercury.TargetAndPayload{
@@ -219,7 +214,6 @@ func EmitSkillEvent(t *testing.T, skillClient mercury.MercuryClient, fqen string
 	return results
 }
 
-// RegisterEvents registers the given contract and returns the FQEN.
 func RegisterEvents(t *testing.T, client mercury.MercuryClient, eventContract EventContract) string {
 	t.Helper()
 	results, err := client.Emit("register-events::v2020_12_25", mercury.TargetAndPayload{
@@ -241,7 +235,6 @@ func RegisterEvents(t *testing.T, client mercury.MercuryClient, eventContract Ev
 	return fqen
 }
 
-// GenerateWillSendVipEventSignature creates a sample contract for tests.
 func GenerateWillSendVipEventSignature(slug ...string) EventContract {
 	namespace := ""
 	if len(slug) > 0 && slug[0] != "" {
@@ -299,7 +292,6 @@ func GenerateWillSendVipEventSignature(slug ...string) EventContract {
 	}
 }
 
-// RegisterTestContract registers the default test contract and returns the FQEN.
 func RegisterTestContract(t *testing.T, client mercury.MercuryClient) string {
 	t.Helper()
 	eventContract := GenerateWillSendVipEventSignature()
@@ -310,7 +302,6 @@ func RegisterTestContract(t *testing.T, client mercury.MercuryClient) string {
 	return fqen
 }
 
-// LoginCreateOrgSetupTwoSkills authenticates as a person, creates an org, installs two skills, and registers a contract.
 func LoginCreateOrgSetupTwoSkills(t *testing.T) (*spruce.Organization, mercury.MercuryClient, mercury.MercuryClient, string) {
 	t.Helper()
 	client, _, _ := LoginAsDemoPerson(t, "+1 555-555-5555")

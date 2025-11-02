@@ -178,7 +178,6 @@ func (c *Client) Emit(event string, args ...TargetAndPayload) ([]ResponsePayload
 }
 
 func toSocketName(event string) string {
-	// replace dots (.) with double underscores (__)
 	return strings.ReplaceAll(event, ".", "__")
 }
 
@@ -358,7 +357,6 @@ func defaultConnect(url string, opts ioClient.OptionsInterface) (Socket, error) 
 	return NewSocketIOClient(socket), nil
 }
 
-// NewSocketIOClient wraps a socket.io client into the Mercury Socket interface.
 func NewSocketIOClient(socket *ioClient.Socket) Socket {
 	if socket == nil {
 		return nil

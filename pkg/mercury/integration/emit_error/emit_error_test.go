@@ -3,16 +3,14 @@ package emit_error_test
 import (
 	"testing"
 
+	"github.com/sprucelabsai-community/mercury-client-go/pkg/testkit"
 	"github.com/stretchr/testify/require"
-
-	"github.com/sprucelabsai-community/mercury-client-go/pkg/mercury/internal/helpers"
 )
 
 func TestEmitNonexistentEventReturnsError(t *testing.T) {
-	helpers.LoadTestEnv(t)
-	helpers.SetupSocketConnect(t)
+	testkit.BeforeEach(t)
 
-	client := helpers.MakeClientWithTestHost(t)
+	client := testkit.MakeClientWithTestHost(t)
 	defer client.Disconnect()
 
 	_, err := client.Emit("this-event-does-not-exist::v2020_12_25")

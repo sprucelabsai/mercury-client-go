@@ -3,16 +3,14 @@ package connect_test
 import (
 	"testing"
 
+	"github.com/sprucelabsai-community/mercury-client-go/pkg/testkit"
 	"github.com/stretchr/testify/require"
-
-	"github.com/sprucelabsai-community/mercury-client-go/pkg/mercury/internal/helpers"
 )
 
 func TestConnectAndDisconnect(t *testing.T) {
-	helpers.LoadTestEnv(t)
-	helpers.SetupSocketConnect(t)
+	testkit.BeforeEach(t)
 
-	client := helpers.MakeClientWithTestHost(t)
+	client := testkit.MakeClientWithTestHost(t)
 	require.True(t, client.IsConnected(), "Client should be connected on construction")
 
 	client.Disconnect()
