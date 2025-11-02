@@ -12,7 +12,15 @@ type FakeSocketClient struct {
 	host         string
 	opts         ioClient.OptionsInterface
 	is_connected bool
+	listeners    []FakedListener
 }
+
+type FakedListener struct {
+	fqen string
+	cb   socketTypes.EventListener
+}
+
+type SocketIoEmitCallback = func([]any, error)
 
 var (
 	lastFakeSocketMu sync.RWMutex
@@ -20,6 +28,10 @@ var (
 )
 
 func FakeSocketConnect(host string, opts ioClient.OptionsInterface) (mercury.Socket, error) {
+	if lastFakeSocket != nil {
+		return lastFakeSocket, nil
+	}
+
 	client := &FakeSocketClient{
 		host: host,
 		opts: opts,
@@ -28,14 +40,34 @@ func FakeSocketConnect(host string, opts ioClient.OptionsInterface) (mercury.Soc
 	client.is_connected = true
 	setLastFakeSocket(client)
 
+	client.On("register-listeners::v2020_12_25", func(args ...any) {
+		cb := PluckCallback(args)
+		if cb != nil {
+			cb([]any{}, nil)
+		}
+	})
+
 	return client, nil
 }
 
 func (s *FakeSocketClient) Emit(event string, args ...any) error {
+
+	for _, listener := range s.listeners {
+		if listener.fqen == event {
+			listener.cb(args...)
+		}
+	}
+
 	return nil
 }
 
 func (s *FakeSocketClient) On(event string, listeners ...socketTypes.EventListener) error {
+	if len(listeners) > 0 {
+		s.listeners = append(s.listeners, FakedListener{
+			fqen: event,
+			cb:   listeners[0],
+		})
+	}
 	return nil
 }
 
