@@ -1,6 +1,9 @@
-package mercuryclientgo
+package testkit
 
 import (
+	"sync"
+
+	"github.com/sprucelabsai/mercury-client-go/pkg/mercury"
 	ioClient "github.com/zishang520/socket.io/clients/socket/v3"
 	socketTypes "github.com/zishang520/socket.io/v3/pkg/types"
 )
@@ -11,13 +14,19 @@ type FakeSocketClient struct {
 	is_connected bool
 }
 
-func FakeSocketConnect(host string, opts ioClient.OptionsInterface) (Socket, error) {
+var (
+	lastFakeSocketMu sync.RWMutex
+	lastFakeSocket   *FakeSocketClient
+)
+
+func FakeSocketConnect(host string, opts ioClient.OptionsInterface) (mercury.Socket, error) {
 	client := &FakeSocketClient{
 		host: host,
 		opts: opts,
 	}
 
 	client.is_connected = true
+	setLastFakeSocket(client)
 
 	return client, nil
 }
@@ -34,7 +43,7 @@ func (s *FakeSocketClient) Connected() bool {
 	return s.is_connected
 }
 
-func (s *FakeSocketClient) Disconnect() Socket {
+func (s *FakeSocketClient) Disconnect() mercury.Socket {
 	return s
 }
 
@@ -52,4 +61,16 @@ func (s *FakeSocketClient) GetHost() string {
 
 func (s *FakeSocketClient) Off(event string, listener socketTypes.EventListener) bool {
 	return false
+}
+
+func LastFakeSocket() *FakeSocketClient {
+	lastFakeSocketMu.RLock()
+	defer lastFakeSocketMu.RUnlock()
+	return lastFakeSocket
+}
+
+func setLastFakeSocket(fake *FakeSocketClient) {
+	lastFakeSocketMu.Lock()
+	defer lastFakeSocketMu.Unlock()
+	lastFakeSocket = fake
 }

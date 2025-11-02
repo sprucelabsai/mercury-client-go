@@ -1,4 +1,4 @@
-package mercuryclientgo
+package mercury_test
 
 import (
 	"fmt"
@@ -10,26 +10,51 @@ import (
 	"github.com/joho/godotenv"
 	spruce "github.com/sprucelabsai-community/spruce-core-schemas/v41/pkg/schemas"
 	schemas "github.com/sprucelabsai-community/spruce-core-schemas/v41/pkg/schemas/spruce/v2020_07_22"
+	mercury "github.com/sprucelabsai/mercury-client-go/pkg/mercury"
+	"github.com/sprucelabsai/mercury-client-go/pkg/testkit"
 	"github.com/stretchr/testify/require"
+	ioClient "github.com/zishang520/socket.io/clients/socket/v3"
 )
 
 func beforeEach(t *testing.T) {
 	t.Helper()
-	SetConnect(nil)
+	t.Cleanup(func() {
+		// time.Sleep(2000 * time.Millisecond) // adjust if you still see timeouts
+	})
+	mercury.SetConnect(func(url string, opts ioClient.OptionsInterface) (mercury.Socket, error) {
+		if opts == nil {
+			opts = ioClient.DefaultOptions()
+		}
+		opts.SetForceNew(true)
+		opts.SetMultiplex(false)
+		opts.SetReconnection(true)
+
+		socket, err := ioClient.Connect(url, opts)
+		if err != nil {
+			return nil, err
+		}
+		return mercury.NewSocketIOClient(socket), nil
+
+	})
+	t.Cleanup(func() {
+		mercury.SetConnect(nil)
+	})
 }
 
 func TestFactory(t *testing.T) {
-	godotenv.Load(".env")
+	godotenv.Load("../../.env", ".env")
 
 	t.Run("can get back client", func(t *testing.T) {
 		beforeEach(t)
-		factory := Factory{}
+		factory := mercury.Factory{}
 		require.NotNil(t, factory, "factory should not be nil")
 	})
 
 	t.Run("sets expected default options when none are provided", func(t *testing.T) {
 		beforeEach(t)
-		fake, _ := MakeFakeClient()
+		t.Cleanup(testkit.ResetConnect)
+		fake, _, err := testkit.MakeFakeClient()
+		require.NoError(t, err)
 		opts := fake.GetOptions()
 		require.NotNil(t, opts, "Options should not be nil")
 		require.Equal(t, 10*time.Second, opts.Timeout(), "Timeout should be 10 seconds by default")
@@ -38,7 +63,9 @@ func TestFactory(t *testing.T) {
 
 	t.Run("can set reconnect to false", func(t *testing.T) {
 		beforeEach(t)
-		fake, _ := MakeFakeClient(MercuryClientOptions{ShouldRetryConnect: false, Host: "http://waka-waka"})
+		t.Cleanup(testkit.ResetConnect)
+		fake, _, err := testkit.MakeFakeClient(mercury.MercuryClientOptions{ShouldRetryConnect: false, Host: "http://waka-waka"})
+		require.NoError(t, err)
 		opts := fake.GetOptions()
 		require.NotNil(t, opts, "Options should not be nil")
 		require.True(t, opts.Reconnection(), "Reconnection should be false when set to false")
@@ -47,13 +74,13 @@ func TestFactory(t *testing.T) {
 
 	t.Run("returns error with bad url 1", func(t *testing.T) {
 		beforeEach(t)
-		_, err := MakeMercuryClient(MercuryClientOptions{Host: "aoeuao://bad-url", ShouldRetryConnect: false})
+		_, err := mercury.MakeMercuryClient(mercury.MercuryClientOptions{Host: "aoeuao://bad-url", ShouldRetryConnect: false})
 		require.Error(t, err, "Bad url should have returned an error")
 	})
 
 	t.Run("returns error with bad url 2", func(t *testing.T) {
 		beforeEach(t)
-		_, err := MakeMercuryClient(MercuryClientOptions{Host: "enon://aoeu333another-bad-uaoeuaoeurl", ShouldRetryConnect: false})
+		_, err := mercury.MakeMercuryClient(mercury.MercuryClientOptions{Host: "enon://aoeu333another-bad-uaoeuaoeurl", ShouldRetryConnect: false})
 		require.Error(t, err, "Bad url should have returned an error")
 	})
 
@@ -67,7 +94,9 @@ func TestFactory(t *testing.T) {
 
 	t.Run("IsConnected calls method on socket client", func(t *testing.T) {
 		beforeEach(t)
-		fake, client := MakeFakeClient()
+		t.Cleanup(testkit.ResetConnect)
+		fake, client, err := testkit.MakeFakeClient()
+		require.NoError(t, err)
 
 		fake.SetConnected(true)
 		require.True(t, client.IsConnected(), "Client should be connected when socket client is connected")
@@ -79,7 +108,9 @@ func TestFactory(t *testing.T) {
 
 	t.Run("defaults host is https_//mercury.spruce.ai", func(t *testing.T) {
 		beforeEach(t)
-		fake, _ := MakeFakeClient()
+		t.Cleanup(testkit.ResetConnect)
+		fake, _, err := testkit.MakeFakeClient()
+		require.NoError(t, err)
 		require.Equal(t, "https://mercury.spruce.ai", fake.GetHost(), "Default host should be https://mercury.spruce.ai")
 	})
 
@@ -107,7 +138,7 @@ func TestFactory(t *testing.T) {
 		fmt.Println("Logged in as person:", person)
 
 		client := MakeClientWithTestHost(t)
-		client.Authenticate(AuthenticatePayload{
+		client.Authenticate(mercury.AuthenticatePayload{
 			Token: token,
 		})
 
@@ -133,7 +164,7 @@ func TestFactory(t *testing.T) {
 		var wasHit = false
 		messages := []string{generateRandomId(), generateRandomId(), generateRandomId()}
 
-		skill2Client.On(fqen, func(targetAndPayload TargetAndPayload) any {
+		skill2Client.On(fqen, func(targetAndPayload mercury.TargetAndPayload) any {
 			wasHit = true
 			return map[string]any{
 				"messages": messages,
@@ -161,15 +192,15 @@ func TestFactory(t *testing.T) {
 		beforeEach(t)
 		org, skill1Client, skill2Client, fqen := loginCreatOrgSetup2SkillsAndRegisterEventContractAsSkill1(t)
 
-		var passedTargetAndPayload TargetAndPayload
-		skill2Client.On(fqen, func(targetAndPayload TargetAndPayload) any {
+		var passedTargetAndPayload mercury.TargetAndPayload
+		skill2Client.On(fqen, func(targetAndPayload mercury.TargetAndPayload) any {
 			passedTargetAndPayload = targetAndPayload
 			return map[string]any{
 				"messages": []string{generateRandomId()},
 			}
 		})
 
-		actualTargetAndPayload := TargetAndPayload{
+		actualTargetAndPayload := mercury.TargetAndPayload{
 			Target: map[string]any{
 				"organizationId": org.Id,
 			},
@@ -194,7 +225,7 @@ func TestFactory(t *testing.T) {
 		org, skill1Client, skill2Client, fqen := loginCreatOrgSetup2SkillsAndRegisterEventContractAsSkill1(t)
 
 		hitCount := 0
-		skill2Client.On(fqen, func(targetAndPayload TargetAndPayload) any {
+		skill2Client.On(fqen, func(targetAndPayload mercury.TargetAndPayload) any {
 			hitCount++
 			return map[string]any{
 				"messages": []string{generateRandomId()},
@@ -214,8 +245,8 @@ func TestFactory(t *testing.T) {
 	})
 }
 
-func emitSkillEvent(t *testing.T, skill1Client MercuryClient, fqen string, orgId string) []ResponsePayload {
-	results, err := skill1Client.Emit(fqen, TargetAndPayload{
+func emitSkillEvent(t *testing.T, skill1Client mercury.MercuryClient, fqen string, orgId string) []mercury.ResponsePayload {
+	results, err := skill1Client.Emit(fqen, mercury.TargetAndPayload{
 		Target: map[string]any{
 			"organizationId": orgId,
 		},
@@ -230,7 +261,7 @@ func emitSkillEvent(t *testing.T, skill1Client MercuryClient, fqen string, orgId
 	return results
 }
 
-func loginCreatOrgSetup2SkillsAndRegisterEventContractAsSkill1(t *testing.T) (*spruce.Organization, MercuryClient, MercuryClient, string) {
+func loginCreatOrgSetup2SkillsAndRegisterEventContractAsSkill1(t *testing.T) (*spruce.Organization, mercury.MercuryClient, mercury.MercuryClient, string) {
 	client, _, _ := loginAsDemoPerson(t, "+1 555-555-5555")
 	org := seedRandomOrg(t, client)
 	skill1Client := seedSkillInstallToOrgAndLoginAsSkill(t, client, org)
@@ -241,8 +272,8 @@ func loginCreatOrgSetup2SkillsAndRegisterEventContractAsSkill1(t *testing.T) (*s
 	return org, skill1Client, skill2Client, fqen
 }
 
-func registerEvents(t *testing.T, client MercuryClient, eventContract EventContract) string {
-	results, err := client.Emit("register-events::v2020_12_25", TargetAndPayload{
+func registerEvents(t *testing.T, client mercury.MercuryClient, eventContract EventContract) string {
+	results, err := client.Emit("register-events::v2020_12_25", mercury.TargetAndPayload{
 		Payload: map[string]any{
 			"contract": eventContract,
 		},
@@ -261,7 +292,7 @@ func registerEvents(t *testing.T, client MercuryClient, eventContract EventContr
 	return fqen
 }
 
-func seedSkillInstallToOrgAndLoginAsSkill(t *testing.T, client MercuryClient, org *spruce.Organization) MercuryClient {
+func seedSkillInstallToOrgAndLoginAsSkill(t *testing.T, client mercury.MercuryClient, org *spruce.Organization) mercury.MercuryClient {
 	skill, err := seedRandomSkill(client)
 	require.NoError(t, err, "Seeding skill should not return an error")
 	fmt.Println("Seeded skill:", skill)
@@ -273,9 +304,9 @@ func seedSkillInstallToOrgAndLoginAsSkill(t *testing.T, client MercuryClient, or
 	return skill1Client
 }
 
-func loginAsSkill(t *testing.T, skill *spruce.Skill) (MercuryClient, error) {
+func loginAsSkill(t *testing.T, skill *spruce.Skill) (mercury.MercuryClient, error) {
 	client := MakeClientWithTestHost(t)
-	_, err := client.Authenticate(AuthenticatePayload{
+	_, err := client.Authenticate(mercury.AuthenticatePayload{
 		SkillId: skill.Id,
 		ApiKey:  skill.ApiKey,
 	})
@@ -283,7 +314,7 @@ func loginAsSkill(t *testing.T, skill *spruce.Skill) (MercuryClient, error) {
 	return client, err
 }
 
-func loginAsDemoPerson(t *testing.T, phone string) (MercuryClient, *spruce.Person, string) {
+func loginAsDemoPerson(t *testing.T, phone string) (mercury.MercuryClient, *spruce.Person, string) {
 	fmt.Println("Logging in as demo person with phone:", phone)
 	client := MakeClientWithTestHost(t)
 	person, token := login(client, phone)
@@ -294,9 +325,9 @@ func generateRandomId() string {
 	return uuid.NewString()
 }
 
-func seedRandomOrg(t *testing.T, client MercuryClient) *spruce.Organization {
+func seedRandomOrg(t *testing.T, client mercury.MercuryClient) *spruce.Organization {
 	orgName := fmt.Sprintf("Test Org %s", generateRandomId())
-	results, err := client.Emit("create-organization::v2020_12_25", TargetAndPayload{
+	results, err := client.Emit("create-organization::v2020_12_25", mercury.TargetAndPayload{
 		Payload: map[string]any{
 			"name": orgName,
 		},
@@ -315,9 +346,9 @@ func seedRandomOrg(t *testing.T, client MercuryClient) *spruce.Organization {
 	return org
 }
 
-func seedRandomSkill(client MercuryClient) (*spruce.Skill, error) {
+func seedRandomSkill(client mercury.MercuryClient) (*spruce.Skill, error) {
 	skillName := fmt.Sprintf("Test Skill %s", uuid.NewString())
-	results, err := client.Emit("register-skill::v2020_12_25", TargetAndPayload{
+	results, err := client.Emit("register-skill::v2020_12_25", mercury.TargetAndPayload{
 		Payload: map[string]any{
 			"name": skillName,
 		},
@@ -342,8 +373,8 @@ func seedRandomSkill(client MercuryClient) (*spruce.Skill, error) {
 	return skill, nil
 }
 
-func installSkill(client MercuryClient, orgId string, skillId string) error {
-	_, err := client.Emit("install-skill::v2020_12_25", TargetAndPayload{
+func installSkill(client mercury.MercuryClient, orgId string, skillId string) error {
+	_, err := client.Emit("install-skill::v2020_12_25", mercury.TargetAndPayload{
 		Target: map[string]any{
 			"organizationId": orgId,
 		},
@@ -354,8 +385,8 @@ func installSkill(client MercuryClient, orgId string, skillId string) error {
 	return err
 }
 
-func login(client MercuryClient, phone string) (*spruce.Person, string) {
-	requestPinResponse, _ := client.Emit("request-pin::v2020_12_25", TargetAndPayload{
+func login(client mercury.MercuryClient, phone string) (*spruce.Person, string) {
+	requestPinResponse, _ := client.Emit("request-pin::v2020_12_25", mercury.TargetAndPayload{
 		Payload: map[string]any{
 			"phone": phone,
 		},
@@ -363,7 +394,7 @@ func login(client MercuryClient, phone string) (*spruce.Person, string) {
 	first := requestPinResponse[0]
 	challenge := first["challenge"].(string)
 
-	confirmPinResponse, _ := client.Emit("confirm-pin::v2020_12_25", TargetAndPayload{
+	confirmPinResponse, _ := client.Emit("confirm-pin::v2020_12_25", mercury.TargetAndPayload{
 		Payload: map[string]any{
 			"challenge": challenge,
 			"pin":       "0000",
@@ -378,7 +409,7 @@ func login(client MercuryClient, phone string) (*spruce.Person, string) {
 	return person, token
 }
 
-func emitWhoAmI(t *testing.T, client MercuryClient) (*spruce.Person, string) {
+func emitWhoAmI(t *testing.T, client mercury.MercuryClient) (*spruce.Person, string) {
 	auth, err := client.Emit("whoami::v2020_12_25")
 	require.NoError(t, err, "Emit whoami should not return an error")
 	require.NotNil(t, auth, "Emit whoami should return a response")
@@ -400,23 +431,14 @@ func emitWhoAmI(t *testing.T, client MercuryClient) (*spruce.Person, string) {
 	return person, authType
 }
 
-func MakeFakeClient(opts ...MercuryClientOptions) (*FakeSocketClient, MercuryClient) {
-	SetConnect(FakeSocketConnect)
-	client, _ := MakeMercuryClient(opts...)
-	socket, _ := client.(*Client)
-	fake, _ := socket.socket.(*FakeSocketClient)
-	return fake, client
-}
-
-func MakeClientWithTestHost(t *testing.T, opts ...MercuryClientOptions) MercuryClient {
-
+func MakeClientWithTestHost(t *testing.T, opts ...mercury.MercuryClientOptions) mercury.MercuryClient {
 	t.Helper()
 	host := os.Getenv("TEST_HOST")
 
 	require.NotEmpty(t, host, "TEST_HOST environment variable must be set for tests")
 	fmt.Println("Making client with test host " + host)
 
-	client, err := MakeMercuryClient(append(opts, MercuryClientOptions{Host: host})...)
+	client, err := mercury.MakeMercuryClient(append(opts, mercury.MercuryClientOptions{Host: host})...)
 	require.NoError(t, err, "Making Mercury client with test host should not return an error")
 
 	fmt.Println("Made client with test host: ", host)
@@ -483,7 +505,7 @@ func generateWillSendVipEventSignature(slug ...string) EventContract {
 	}
 }
 
-func registerTestContract(t *testing.T, client MercuryClient) string {
+func registerTestContract(t *testing.T, client mercury.MercuryClient) string {
 	eventContract := generateWillSendVipEventSignature()
 	require.NotNil(t, eventContract, "Expected event contract to be generated")
 

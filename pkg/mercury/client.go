@@ -1,4 +1,4 @@
-package mercuryclientgo
+package mercury
 
 import (
 	"encoding/json"
@@ -355,10 +355,11 @@ func defaultConnect(url string, opts ioClient.OptionsInterface) (Socket, error) 
 	if err != nil {
 		return nil, err
 	}
-	return newSocketIoClient(socket), nil
+	return NewSocketIOClient(socket), nil
 }
 
-func newSocketIoClient(socket *ioClient.Socket) Socket {
+// NewSocketIOClient wraps a socket.io client into the Mercury Socket interface.
+func NewSocketIOClient(socket *ioClient.Socket) Socket {
 	if socket == nil {
 		return nil
 	}

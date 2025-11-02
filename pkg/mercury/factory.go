@@ -1,4 +1,4 @@
-package mercuryclientgo
+package mercury
 
 import (
 	"os"
