@@ -10,7 +10,7 @@ import (
 )
 
 func TestAuthenticateWithExistingToken(t *testing.T) {
-	testkit.BeforeEach(t)
+	testkit.BeforeEachInternal(t)
 
 	initialClient, person, token := testkit.LoginAsDemoPerson(t, "+1 555-555-5555")
 	initialClient.Disconnect()

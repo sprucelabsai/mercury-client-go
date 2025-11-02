@@ -1,6 +1,7 @@
 package testkit
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/sprucelabsai-community/mercury-client-go/pkg/mercury"
@@ -51,18 +52,59 @@ func FakeSocketConnect(host string, opts ioClient.OptionsInterface) (mercury.Soc
 }
 
 func (s *FakeSocketClient) Emit(event string, args ...any) error {
+	cb := PluckCallback(args)
 
 	for _, listener := range s.listeners {
 		if listener.fqen == event {
-			listener.cb(args...)
+			argsWithBridge := args[:len(args)-1]
+			bridge := func(responseArgs []any, _ error) {
+				mapped := wrapInAggregateResponse(mercury.ResponsePayload{})
+				fmt.Print("tmest", mapped)
+				if cb != nil {
+					cb([]any{mapped}, nil)
+				}
+			}
+
+			argsWithBridge = append(argsWithBridge, bridge)
+			listener.cb(argsWithBridge...)
+
+			return nil
 		}
+	}
+
+	if cb != nil {
+		cb(nil, fmt.Errorf("no listener registered for event %s", event))
 	}
 
 	return nil
 }
 
+func wrapInAggregateResponse(payload mercury.ResponsePayload) mercury.MercuryAggregateResponse {
+	return mercury.MercuryAggregateResponse{
+		TotalContracts: 1,
+		TotalResponses: 1,
+		TotalErrors:    0,
+		Responses: []mercury.MercurySingleResponse{
+			{
+				ResponderRef: "fake-responder-1",
+				Errors:       []any{},
+				Payload:      payload,
+			},
+		},
+	}
+}
+
 func (s *FakeSocketClient) On(event string, listeners ...socketTypes.EventListener) error {
 	if len(listeners) > 0 {
+
+		var filteredListeners []FakedListener
+		for _, existing := range s.listeners {
+			if existing.fqen != event {
+				filteredListeners = append(filteredListeners, existing)
+			}
+		}
+		s.listeners = filteredListeners
+
 		s.listeners = append(s.listeners, FakedListener{
 			fqen: event,
 			cb:   listeners[0],

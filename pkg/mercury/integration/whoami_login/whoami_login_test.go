@@ -8,7 +8,7 @@ import (
 )
 
 func TestWhoAmILoggedIn(t *testing.T) {
-	testkit.BeforeEach(t)
+	testkit.BeforeEachInternal(t)
 
 	client, person, _ := testkit.LoginAsDemoPerson(t, "+1 555-555-5555")
 	defer client.Disconnect()

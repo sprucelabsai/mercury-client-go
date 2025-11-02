@@ -169,6 +169,8 @@ func (c *Client) Emit(event string, args ...TargetAndPayload) ([]ResponsePayload
 			return
 		}
 
+		done <- emitResponse{nil, err}
+
 		fmt.Println("In callback with response:", response)
 	})
 
@@ -302,11 +304,8 @@ func (c *Client) On(event string, listener MercuryListener) {
 		ack(nil, nil)
 	}
 
-	c.socket.On(event, handler)
-
-	if socketEvent := toSocketName(event); socketEvent != event {
-		c.socket.On(socketEvent, handler)
-	}
+	socketEvent := toSocketName(event)
+	c.socket.On(socketEvent, handler)
 }
 
 func (c *Client) Off(event string, listeners ...MercuryListener) {
@@ -354,10 +353,11 @@ func defaultConnect(url string, opts ioClient.OptionsInterface) (Socket, error) 
 	if err != nil {
 		return nil, err
 	}
-	return NewSocketIOClient(socket), nil
+
+	return newSocketIoClient(socket), nil
 }
 
-func NewSocketIOClient(socket *ioClient.Socket) Socket {
+func newSocketIoClient(socket *ioClient.Socket) Socket {
 	if socket == nil {
 		return nil
 	}

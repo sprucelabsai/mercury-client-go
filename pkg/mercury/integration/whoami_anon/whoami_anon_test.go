@@ -9,7 +9,7 @@ import (
 )
 
 func TestWhoAmIAnonymous(t *testing.T) {
-	testkit.BeforeEach(t)
+	testkit.BeforeEachInternal(t)
 
 	client := testkit.MakeClientWithTestHost(t)
 	defer client.Disconnect()

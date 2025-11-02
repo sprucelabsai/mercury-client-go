@@ -8,7 +8,7 @@ import (
 )
 
 func TestConnectAndDisconnect(t *testing.T) {
-	testkit.BeforeEach(t)
+	testkit.BeforeEachInternal(t)
 
 	client := testkit.MakeClientWithTestHost(t)
 	require.True(t, client.IsConnected(), "Client should be connected on construction")

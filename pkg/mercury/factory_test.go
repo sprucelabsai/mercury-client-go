@@ -12,13 +12,13 @@ import (
 func TestFactory(t *testing.T) {
 
 	t.Run("can get back client", func(t *testing.T) {
-		testkit.BeforeEach(t)
+		testkit.BeforeEachInternal(t)
 		factory := mercury.Factory{}
 		require.NotNil(t, factory, "factory should not be nil")
 	})
 
 	t.Run("sets expected default options when none are provided", func(t *testing.T) {
-		testkit.BeforeEach(t)
+		testkit.BeforeEachInternal(t)
 		fake, _, err := testkit.MakeFakeClient()
 		require.NoError(t, err)
 		opts := fake.GetOptions()
@@ -28,7 +28,7 @@ func TestFactory(t *testing.T) {
 	})
 
 	t.Run("can set reconnect to false", func(t *testing.T) {
-		testkit.BeforeEach(t)
+		testkit.BeforeEachInternal(t)
 		fake, _, err := testkit.MakeFakeClient(mercury.MercuryClientOptions{ShouldRetryConnect: false, Host: "http://waka-waka"})
 		require.NoError(t, err)
 		opts := fake.GetOptions()
@@ -38,19 +38,19 @@ func TestFactory(t *testing.T) {
 	})
 
 	t.Run("returns error with bad url 1", func(t *testing.T) {
-		testkit.BeforeEach(t)
+		testkit.BeforeEachInternal(t)
 		_, err := mercury.MakeMercuryClient(mercury.MercuryClientOptions{Host: "aoeuao://bad-url", ShouldRetryConnect: false})
 		require.Error(t, err, "Bad url should have returned an error")
 	})
 
 	t.Run("returns error with bad url 2", func(t *testing.T) {
-		testkit.BeforeEach(t)
+		testkit.BeforeEachInternal(t)
 		_, err := mercury.MakeMercuryClient(mercury.MercuryClientOptions{Host: "enon://aoeu333another-bad-uaoeuaoeurl", ShouldRetryConnect: false})
 		require.Error(t, err, "Bad url should have returned an error")
 	})
 
 	t.Run("IsConnected calls method on socket client", func(t *testing.T) {
-		testkit.BeforeEach(t)
+		testkit.BeforeEachInternal(t)
 		fake, client, err := testkit.MakeFakeClient()
 		require.NoError(t, err)
 
@@ -63,8 +63,7 @@ func TestFactory(t *testing.T) {
 	})
 
 	t.Run("defaults host is https_//mercury.spruce.ai", func(t *testing.T) {
-		testkit.BeforeEach(t)
-		t.Cleanup(testkit.ResetConnect)
+		testkit.BeforeEachInternal(t)
 		fake, _, err := testkit.MakeFakeClient()
 		require.NoError(t, err)
 		require.Equal(t, "https://mercury.spruce.ai", fake.GetHost(), "Default host should be https://mercury.spruce.ai")

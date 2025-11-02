@@ -35,10 +35,19 @@ func ResetConnect() {
 	setLastFakeSocket(nil)
 }
 
-func BeforeEach(t *testing.T) {
+func BeforeEachInternal(t *testing.T) {
 	t.Helper()
 	loadTestEnv(t)
 	ResetConnect()
+	t.Cleanup(func() {
+		ResetConnect()
+	})
+}
+
+func BeforeEach(t *testing.T) {
+	t.Helper()
+	ResetConnect()
+	mercury.SetConnect(FakeSocketConnect)
 	t.Cleanup(func() {
 		ResetConnect()
 	})
@@ -325,4 +334,33 @@ func seedSkillInstallToOrgAndLoginAsSkill(t *testing.T, personClient mercury.Mer
 	skillClient, err := LoginAsSkill(t, skill)
 	require.NoError(t, err, "Logging in as skill should not return an error")
 	return skillClient
+}
+
+func BuildAggregateResponse(responses []mercury.ResponsePayload) mercury.MercuryAggregateResponse {
+
+	responsesLen := len(responses)
+	allResponses := make([]mercury.MercurySingleResponse, responsesLen)
+	for i, resp := range responses {
+		allResponses[i] = mercury.MercurySingleResponse{
+			ResponderRef: fmt.Sprintf("fake-responder-%d", i+1),
+			Errors:       []any{},
+			Payload:      resp,
+		}
+	}
+
+	return mercury.MercuryAggregateResponse{
+		TotalContracts: float64(responsesLen),
+		TotalResponses: float64(responsesLen),
+		TotalErrors:    0,
+		Responses:      allResponses,
+	}
+}
+
+func PluckCallback(args []any) SocketIoEmitCallback {
+	if len(args) > 0 {
+		if cb, ok := args[len(args)-1].(SocketIoEmitCallback); ok {
+			return cb
+		}
+	}
+	return nil
 }

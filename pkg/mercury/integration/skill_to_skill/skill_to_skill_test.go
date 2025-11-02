@@ -10,7 +10,7 @@ import (
 )
 
 func TestSkillToSkillEmission(t *testing.T) {
-	testkit.BeforeEach(t)
+	testkit.BeforeEachInternal(t)
 
 	org, skill1Client, skill2Client, fqen := testkit.LoginCreateOrgSetupTwoSkills(t)
 	defer skill1Client.Disconnect()
