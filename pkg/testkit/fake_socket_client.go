@@ -58,8 +58,11 @@ func (s *FakeSocketClient) Emit(event string, args ...any) error {
 		if listener.fqen == event {
 			argsWithBridge := args[:len(args)-1]
 			bridge := func(responseArgs []any, _ error) {
-				mapped := wrapInAggregateResponse(mercury.ResponsePayload{})
-				fmt.Print("tmest", mapped)
+				var payload mercury.ResponsePayload
+				if len(responseArgs) > 0 {
+					payload, _ = responseArgs[0].(mercury.ResponsePayload)
+				}
+				mapped := BuildAggregateResponse([]mercury.ResponsePayload{payload})
 				if cb != nil {
 					cb([]any{mapped}, nil)
 				}
@@ -77,21 +80,6 @@ func (s *FakeSocketClient) Emit(event string, args ...any) error {
 	}
 
 	return nil
-}
-
-func wrapInAggregateResponse(payload mercury.ResponsePayload) mercury.MercuryAggregateResponse {
-	return mercury.MercuryAggregateResponse{
-		TotalContracts: 1,
-		TotalResponses: 1,
-		TotalErrors:    0,
-		Responses: []mercury.MercurySingleResponse{
-			{
-				ResponderRef: "fake-responder-1",
-				Errors:       []any{},
-				Payload:      payload,
-			},
-		},
-	}
 }
 
 func (s *FakeSocketClient) On(event string, listeners ...socketTypes.EventListener) error {

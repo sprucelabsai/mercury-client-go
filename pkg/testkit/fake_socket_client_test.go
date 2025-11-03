@@ -1,10 +1,12 @@
 package testkit
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 
 	"github.com/sprucelabsai-community/mercury-client-go/pkg/mercury"
+	"github.com/sprucelabsai-community/spruce-core-schemas/v41/pkg/schemas"
 	"github.com/stretchr/testify/require"
 )
 
@@ -146,4 +148,68 @@ func TestFactory(t *testing.T) {
 		require.False(t, firstHit, "First listener should not have been hit")
 		require.True(t, secondHit, "Second listener should have been hit")
 	})
+
+	t.Run("can return map response 1 from listener", func(t *testing.T) {
+		BeforeEach(t)
+
+		client, err := mercury.NewMercuryClient()
+		require.NoError(t, err, "Should not have error creating client")
+
+		emitAndAssertResponsePassedBack(t, client, mercury.ResponsePayload{
+			"Key": "Value",
+		})
+
+		emitAndAssertResponsePassedBack(t, client, mercury.ResponsePayload{
+			"AnotherKey": "watermelon",
+			"Cheese":     "gouda",
+		})
+	})
+
+	t.Run("returning a core location maps to camelCase keys", func(t *testing.T) {
+		BeforeEach(t)
+
+		location := schemas.Location{
+			Id:   GenerateRandomId(),
+			Name: GenerateRandomId(),
+		}
+
+		expected, mapErr := StructToMap(location)
+		require.NoError(t, mapErr, "Should be able to convert location struct to map")
+
+		client, _ := mercury.NewMercuryClient()
+		client.On("get-location::v100", func(_ mercury.TargetAndPayload) any {
+			return map[string]any{
+				"location": location,
+			}
+		})
+
+		responses, err := client.Emit("get-location::v100")
+		require.NoError(t, err, "Emitting to registered event should not return an error")
+		require.Equal(t, expected, responses[0]["location"], "Did not pass back map of location")
+
+	})
+}
+
+func emitAndAssertResponsePassedBack(t *testing.T, client mercury.MercuryClient, responsePayload mercury.ResponsePayload) {
+	client.On("map.response.event::v1", func(targetAndPayload mercury.TargetAndPayload) any {
+		return responsePayload
+	})
+
+	responses, err := client.Emit("map.response.event::v1")
+	require.NoError(t, err, "Emitting to registered event should not return an error")
+	require.Len(t, responses, 1, "Response should have one payload")
+	require.Equal(t, responsePayload, responses[0], "Response payload should match expected")
+}
+
+func StructToMap[T any](value T) (map[string]any, error) {
+	data, err := json.Marshal(value)
+	if err != nil {
+		return nil, err
+	}
+
+	var out map[string]any
+	if err := json.Unmarshal(data, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
 }
