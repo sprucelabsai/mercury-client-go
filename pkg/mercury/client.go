@@ -255,8 +255,6 @@ func (c *Client) On(event string, listener MercuryListener) {
 			}
 		}
 
-		fmt.Println("Parsed targetAndPayload:", targetAndPayload)
-
 		var response any
 
 		if listener != nil && handlerErr == nil {
@@ -311,7 +309,9 @@ func (c *Client) Off(event string, listeners ...MercuryListener) {
 		},
 	})
 
-	fmt.Println("Unregister listeners response:", results, err)
+	if err != nil {
+		fmt.Println("Unregister listeners response error:", results, err)
+	}
 	c.socket.Off(event, nil)
 }
 
