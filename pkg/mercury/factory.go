@@ -81,7 +81,7 @@ func (f *Factory) Client(host string, opts ...MercuryClientOptions) (MercuryClie
 	return client, nil
 }
 
-func MakeMercuryClient(opts ...MercuryClientOptions) (MercuryClient, error) {
+func NewMercuryClient(opts ...MercuryClientOptions) (MercuryClient, error) {
 	host := os.Getenv("HOST")
 
 	if len(opts) > 0 {

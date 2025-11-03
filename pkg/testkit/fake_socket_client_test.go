@@ -11,7 +11,7 @@ import (
 func TestFactory(t *testing.T) {
 	t.Run("can easily create test client", func(t *testing.T) {
 		BeforeEach(t)
-		_, err := mercury.MakeMercuryClient()
+		_, err := mercury.NewMercuryClient()
 		require.NoError(t, err, "Created socket just fine")
 	})
 
@@ -87,7 +87,7 @@ func TestFactory(t *testing.T) {
 
 	t.Run("returns error if no listener for event is set on fake", func(t *testing.T) {
 		BeforeEach(t)
-		client, err := mercury.MakeMercuryClient()
+		client, err := mercury.NewMercuryClient()
 		require.NoError(t, err, "Should not have error creating client")
 
 		_, err = client.Emit("unregistered-event", mercury.TargetAndPayload{})
@@ -96,10 +96,10 @@ func TestFactory(t *testing.T) {
 
 	t.Run("fake sockets can emit to each other", func(t *testing.T) {
 		BeforeEach(t)
-		client1, err := mercury.MakeMercuryClient()
+		client1, err := mercury.NewMercuryClient()
 		require.NoError(t, err)
 
-		client2, err := mercury.MakeMercuryClient()
+		client2, err := mercury.NewMercuryClient()
 		require.NoError(t, err)
 
 		var wasHit bool
@@ -116,7 +116,7 @@ func TestFactory(t *testing.T) {
 	t.Run("returns error if no listener for event is set on fake", func(t *testing.T) {
 		BeforeEach(t)
 
-		client, err := mercury.MakeMercuryClient()
+		client, err := mercury.NewMercuryClient()
 		require.NoError(t, err, "Should not have error creating client")
 
 		_, err = client.Emit("unregistered-event", mercury.TargetAndPayload{})
@@ -126,7 +126,7 @@ func TestFactory(t *testing.T) {
 	t.Run("only emits to the last listener set for an event", func(t *testing.T) {
 		BeforeEach(t)
 
-		client, err := mercury.MakeMercuryClient()
+		client, err := mercury.NewMercuryClient()
 		require.NoError(t, err, "Should not have error creating client")
 
 		var firstHit bool

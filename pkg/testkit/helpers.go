@@ -17,7 +17,7 @@ import (
 func MakeFakeClient(opts ...mercury.MercuryClientOptions) (*FakeSocketClient, mercury.MercuryClient, error) {
 	mercury.SetConnect(FakeSocketConnect)
 
-	client, err := mercury.MakeMercuryClient(opts...)
+	client, err := mercury.NewMercuryClient(opts...)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -67,7 +67,7 @@ func MakeClientWithTestHost(t *testing.T, opts ...mercury.MercuryClientOptions) 
 	require.NotEmpty(t, host, "TEST_HOST environment variable must be set for tests")
 	fmt.Println("Making client with test host " + host)
 
-	client, err := mercury.MakeMercuryClient(append(opts, mercury.MercuryClientOptions{Host: host})...)
+	client, err := mercury.NewMercuryClient(append(opts, mercury.MercuryClientOptions{Host: host})...)
 	require.NoError(t, err, "Making Mercury client with test host should not return an error")
 
 	fmt.Println("Made client with test host: ", host)

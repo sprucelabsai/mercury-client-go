@@ -39,13 +39,13 @@ func TestFactory(t *testing.T) {
 
 	t.Run("returns error with bad url 1", func(t *testing.T) {
 		testkit.BeforeEachInternal(t)
-		_, err := mercury.MakeMercuryClient(mercury.MercuryClientOptions{Host: "aoeuao://bad-url", ShouldRetryConnect: false})
+		_, err := mercury.NewMercuryClient(mercury.MercuryClientOptions{Host: "aoeuao://bad-url", ShouldRetryConnect: false})
 		require.Error(t, err, "Bad url should have returned an error")
 	})
 
 	t.Run("returns error with bad url 2", func(t *testing.T) {
 		testkit.BeforeEachInternal(t)
-		_, err := mercury.MakeMercuryClient(mercury.MercuryClientOptions{Host: "enon://aoeu333another-bad-uaoeuaoeurl", ShouldRetryConnect: false})
+		_, err := mercury.NewMercuryClient(mercury.MercuryClientOptions{Host: "enon://aoeu333another-bad-uaoeuaoeurl", ShouldRetryConnect: false})
 		require.Error(t, err, "Bad url should have returned an error")
 	})
 
