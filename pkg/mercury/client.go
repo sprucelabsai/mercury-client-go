@@ -87,10 +87,10 @@ func (c *Client) Connect(url string, opts MercuryClientOptions) error {
 			if errVal, ok := args[0].(error); ok && errVal != nil {
 				connErr = errVal
 			} else {
-				connErr = fmt.Errorf("socket connect error: %v", args[0])
+				connErr = fmt.Errorf("socket connect_error: %v", args[0])
 			}
 		} else {
-			connErr = fmt.Errorf("socket connect error")
+			connErr = fmt.Errorf("socket connect_error")
 		}
 
 		finish(connErr)
@@ -154,7 +154,7 @@ func (c *Client) Emit(event string, args ...TargetAndPayload) ([]ResponsePayload
 				if len(single.Errors) > 0 {
 					errMsg := single.Errors[0]
 					if errMsg != "" {
-						err = fmt.Errorf("error from emit: %v", errMsg)
+						err = fmt.Errorf("error from '%s' emit: %v", event, errMsg)
 						break
 					}
 				} else {
