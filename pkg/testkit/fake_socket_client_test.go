@@ -2,6 +2,7 @@ package testkit
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"testing"
 
@@ -186,6 +187,64 @@ func TestFactory(t *testing.T) {
 		responses, err := client.Emit("get-location::v100")
 		require.NoError(t, err, "Emitting to registered event should not return an error")
 		require.Equal(t, expected, responses[0]["location"], "Did not pass back map of location")
+
+	})
+
+	t.Run("can make select events return errors", func(t *testing.T) {
+		BeforeEach(t)
+
+		errMessage := GenerateRandomId()
+		err := errors.New(errMessage)
+
+		client, _ := mercury.NewMercuryClient()
+		fake := LastFakeSocket()
+		fake.MakeEventReturnError("error.event::v1", err)
+
+		_, actual := client.Emit("error.event::v1")
+		require.Error(t, actual, "Emitting to error event should return an error")
+		require.Contains(t, actual.Error(), errMessage, "Error message should match what was set")
+	})
+
+	t.Run("only makes the specific events return errors", func(t *testing.T) {
+		BeforeEach(t)
+
+		client, _ := mercury.NewMercuryClient()
+		client.On("an-event-1", func(targetAndPayload mercury.TargetAndPayload) any {
+			return nil
+		})
+
+		client.On("an-event-2", func(targetAndPayload mercury.TargetAndPayload) any {
+			return nil
+		})
+
+		fake := LastFakeSocket()
+		fake.MakeEventReturnError("an-event-2", errors.New("whatever dude"))
+
+		_, err1 := client.Emit("an-event-1")
+		_, err2 := client.Emit("an-event-2")
+
+		require.NoError(t, err1, "Emitting to non-error event should not return an error")
+		require.Error(t, err2, "Emitting to error event should return an error")
+
+		fake.MakeEventReturnError("an-event-1", errors.New("waka"))
+
+		_, err1Again := client.Emit("an-event-1")
+		_, err2Again := client.Emit("an-event-2")
+
+		require.Error(t, err1Again, "Emitting to error event should return an error")
+		require.Error(t, err2Again, "Emitting to error event should return an error")
+	})
+
+	t.Run("should not carry over forced errors", func(t *testing.T) {
+		BeforeEach(t)
+
+		client, _ := mercury.NewMercuryClient()
+		client.On("an-event-1", func(targetAndPayload mercury.TargetAndPayload) any {
+			return nil
+		})
+
+		_, err := client.Emit("an-event-1")
+		require.NoError(t, err, "Emitting to non-error event should not return an error")
 
 	})
 }

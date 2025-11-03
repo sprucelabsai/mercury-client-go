@@ -171,7 +171,6 @@ func (c *Client) Emit(event string, args ...TargetAndPayload) ([]ResponsePayload
 
 		done <- emitResponse{nil, err}
 
-		fmt.Println("In callback with response:", response)
 	})
 
 	emitResponse := <-done
@@ -225,7 +224,7 @@ func (c *Client) Authenticate(opts AuthenticatePayload) (*AuthenticatResponse, e
 }
 
 func (c *Client) On(event string, listener MercuryListener) {
-	results, err := c.Emit("register-listeners::v2020_12_25", TargetAndPayload{
+	c.Emit("register-listeners::v2020_12_25", TargetAndPayload{
 		Payload: map[string]any{
 			"events": []map[string]string{
 				{
@@ -235,10 +234,7 @@ func (c *Client) On(event string, listener MercuryListener) {
 		},
 	})
 
-	fmt.Println("Register listeners response:", results, err)
-
 	handler := func(args ...any) {
-		fmt.Println("Event received:", event, args, listener)
 
 		var ack serverSocket.Ack
 		argLen := len(args)

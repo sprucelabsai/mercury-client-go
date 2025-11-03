@@ -16,6 +16,15 @@ type FakeSocketClient struct {
 	listeners    []FakedListener
 }
 
+func (s *FakeSocketClient) MakeEventReturnError(event string, err error) {
+	s.On(event, func(args ...any) {
+		cb := PluckCallback(args)
+		if cb != nil {
+			cb(nil, err)
+		}
+	})
+}
+
 type FakedListener struct {
 	fqen string
 	cb   socketTypes.EventListener
@@ -57,7 +66,13 @@ func (s *FakeSocketClient) Emit(event string, args ...any) error {
 	for _, listener := range s.listeners {
 		if listener.fqen == event {
 			argsWithBridge := args[:len(args)-1]
-			bridge := func(responseArgs []any, _ error) {
+			bridge := func(responseArgs []any, err error) {
+
+				if err != nil {
+					cb(nil, err)
+					return
+				}
+
 				var payload mercury.ResponsePayload
 				if len(responseArgs) > 0 {
 					payload, _ = responseArgs[0].(mercury.ResponsePayload)
@@ -85,7 +100,6 @@ func (s *FakeSocketClient) Emit(event string, args ...any) error {
 func (s *FakeSocketClient) On(event string, listeners ...socketTypes.EventListener) error {
 	socketName := mercury.ToSocketName(event)
 	if len(listeners) > 0 {
-
 		var filteredListeners []FakedListener
 		for _, existing := range s.listeners {
 			if existing.fqen != socketName {
