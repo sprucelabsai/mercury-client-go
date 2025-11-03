@@ -20,13 +20,13 @@ func TestListenerOffStopsEvents(t *testing.T) {
 	skill2Client.On(fqen, func(targetAndPayload mercury.TargetAndPayload) any {
 		hitCount++
 		return map[string]any{
-			"messages": []string{testkit.GenerateRandomID()},
+			"messages": []string{testkit.GenerateRandomId()},
 		}
 	})
 
-	testkit.EmitSkillEvent(t, skill1Client, fqen, org.Id, testkit.GenerateRandomID())
+	testkit.EmitSkillEvent(t, skill1Client, fqen, org.Id, testkit.GenerateRandomId())
 	skill2Client.Off(fqen)
 
-	testkit.EmitSkillEvent(t, skill1Client, fqen, org.Id, testkit.GenerateRandomID())
+	testkit.EmitSkillEvent(t, skill1Client, fqen, org.Id, testkit.GenerateRandomId())
 	require.Equal(t, 1, hitCount, "Hit count should be 1 after turning off listener")
 }

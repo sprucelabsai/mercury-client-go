@@ -17,7 +17,7 @@ func TestSkillToSkillEmission(t *testing.T) {
 	defer skill2Client.Disconnect()
 
 	wasHit := false
-	messages := []string{testkit.GenerateRandomID(), testkit.GenerateRandomID(), testkit.GenerateRandomID()}
+	messages := []string{testkit.GenerateRandomId(), testkit.GenerateRandomId(), testkit.GenerateRandomId()}
 
 	skill2Client.On(fqen, func(targetAndPayload mercury.TargetAndPayload) any {
 		wasHit = true
@@ -26,7 +26,7 @@ func TestSkillToSkillEmission(t *testing.T) {
 		}
 	})
 
-	results := testkit.EmitSkillEvent(t, skill1Client, fqen, org.Id, testkit.GenerateRandomID())
+	results := testkit.EmitSkillEvent(t, skill1Client, fqen, org.Id, testkit.GenerateRandomId())
 
 	require.True(t, wasHit, "Event handler should have been hit")
 	require.Equal(t, 1, len(results), "There should be one result")

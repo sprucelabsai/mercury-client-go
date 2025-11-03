@@ -75,7 +75,7 @@ func MakeClientWithTestHost(t *testing.T, opts ...mercury.MercuryClientOptions) 
 	return client
 }
 
-func GenerateRandomID() string {
+func GenerateRandomId() string {
 	return uuid.NewString()
 }
 
@@ -186,7 +186,7 @@ func SeedRandomSkill(client mercury.MercuryClient) (*spruce.Skill, error) {
 
 func SeedRandomOrg(t *testing.T, client mercury.MercuryClient) *spruce.Organization {
 	t.Helper()
-	orgName := fmt.Sprintf("Test Org %s", GenerateRandomID())
+	orgName := fmt.Sprintf("Test Org %s", GenerateRandomId())
 	results, err := client.Emit("create-organization::v2020_12_25", mercury.TargetAndPayload{
 		Payload: map[string]any{
 			"name": orgName,

@@ -20,7 +20,7 @@ func TestListenerReceivesTargetAndPayload(t *testing.T) {
 	skill2Client.On(fqen, func(targetAndPayload mercury.TargetAndPayload) any {
 		captured = targetAndPayload
 		return map[string]any{
-			"messages": []string{testkit.GenerateRandomID()},
+			"messages": []string{testkit.GenerateRandomId()},
 		}
 	})
 
@@ -29,7 +29,7 @@ func TestListenerReceivesTargetAndPayload(t *testing.T) {
 			"organizationId": org.Id,
 		},
 		Payload: map[string]any{
-			"message": testkit.GenerateRandomID(),
+			"message": testkit.GenerateRandomId(),
 		},
 	}
 
