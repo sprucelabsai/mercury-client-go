@@ -91,7 +91,7 @@ func TestFactory(t *testing.T) {
 		require.NoError(t, err, "Should not have error creating client")
 
 		_, err = client.Emit("unregistered-event", mercury.TargetAndPayload{})
-		require.Error(t, err, "Emitting to unregistered event should return an error")
+		require.Error(t, err, "Emitting event without local listener should return an error")
 	})
 
 	t.Run("fake sockets can emit to each other", func(t *testing.T) {

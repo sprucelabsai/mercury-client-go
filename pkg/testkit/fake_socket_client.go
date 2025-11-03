@@ -73,7 +73,7 @@ func (s *FakeSocketClient) Emit(event string, args ...any) error {
 	}
 
 	if cb != nil {
-		cb(nil, fmt.Errorf("no listener registered for event %s", event))
+		cb(nil, fmt.Errorf("no local listener for event %s.\n\nTry client, _ := mercury.NewMercuryClient()\nclient.On(\"%s\", func(targetAndPayload mercury.TargetAndPayload) any {\n\treturn nil\n})", event, event))
 	}
 
 	return nil
