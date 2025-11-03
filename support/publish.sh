@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-version=$(tr -d '[:space:]' <VERSION)
+version="v$(tr -d '[:space:]' <VERSION)"
 
 if [[ -z "$version" ]]; then
 	echo "VERSION file is empty." >&2
@@ -14,3 +14,4 @@ if git rev-parse "$version" >/dev/null 2>&1; then
 fi
 
 git tag "$version"
+git push origin "$version"
