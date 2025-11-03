@@ -132,7 +132,7 @@ func (c *Client) Emit(event string, args ...TargetAndPayload) ([]ResponsePayload
 		targetAndPayload = args[0]
 	}
 
-	mappedEventName := toSocketName(event)
+	mappedEventName := ToSocketName(event)
 
 	c.socket.Emit(mappedEventName, targetAndPayload, func(response []any, err error) {
 		if len(response) > 0 {
@@ -179,7 +179,7 @@ func (c *Client) Emit(event string, args ...TargetAndPayload) ([]ResponsePayload
 	return emitResponse.resp, emitResponse.err
 }
 
-func toSocketName(event string) string {
+func ToSocketName(event string) string {
 	return strings.ReplaceAll(event, ".", "__")
 }
 
@@ -304,8 +304,8 @@ func (c *Client) On(event string, listener MercuryListener) {
 		ack(nil, nil)
 	}
 
-	socketEvent := toSocketName(event)
-	c.socket.On(socketEvent, handler)
+	// socketEvent := toSocketName(event)
+	c.socket.On(event, handler)
 }
 
 func (c *Client) Off(event string, listeners ...MercuryListener) {

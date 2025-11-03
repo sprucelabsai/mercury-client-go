@@ -95,18 +95,19 @@ func wrapInAggregateResponse(payload mercury.ResponsePayload) mercury.MercuryAgg
 }
 
 func (s *FakeSocketClient) On(event string, listeners ...socketTypes.EventListener) error {
+	socketName := mercury.ToSocketName(event)
 	if len(listeners) > 0 {
 
 		var filteredListeners []FakedListener
 		for _, existing := range s.listeners {
-			if existing.fqen != event {
+			if existing.fqen != socketName {
 				filteredListeners = append(filteredListeners, existing)
 			}
 		}
 		s.listeners = filteredListeners
 
 		s.listeners = append(s.listeners, FakedListener{
-			fqen: event,
+			fqen: socketName,
 			cb:   listeners[0],
 		})
 	}
