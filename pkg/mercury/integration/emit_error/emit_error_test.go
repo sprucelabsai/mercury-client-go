@@ -13,6 +13,7 @@ func TestEmitNonexistentEventReturnsError(t *testing.T) {
 	client := testkit.MakeClientWithTestHost(t)
 	defer client.Disconnect()
 
-	_, err := client.Emit("this-event-does-not-exist::v2020_12_25")
+	response, err := client.Emit("this-event-does-not-exist::v2020_12_25")
+	require.Nil(t, response, "Response should be nil for non-existent event")
 	require.Error(t, err, "Emitting non-existent event should return an error")
 }

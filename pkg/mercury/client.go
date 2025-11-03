@@ -151,14 +151,20 @@ func (c *Client) Emit(event string, args ...TargetAndPayload) ([]ResponsePayload
 			singleResponses := aggregateResponse.Responses
 			var resp []ResponsePayload
 			for _, single := range singleResponses {
-				resp = append(resp, single.Payload)
 				if len(single.Errors) > 0 {
 					errMsg := single.Errors[0]
 					if errMsg != "" {
 						err = fmt.Errorf("error from emit: %v", errMsg)
 						break
 					}
+				} else {
+					resp = append(resp, single.Payload)
 				}
+			}
+
+			if err != nil {
+				done <- emitResponse{nil, err}
+				return
 			}
 
 			if resp == nil {
