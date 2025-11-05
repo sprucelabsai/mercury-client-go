@@ -63,7 +63,6 @@ func (c *Client) Connect(url string, opts MercuryClientOptions) error {
 	}
 
 	socket.On("connect", func(...any) {
-		println("Connected to server")
 		finish(nil)
 	})
 
@@ -80,8 +79,6 @@ func (c *Client) Connect(url string, opts MercuryClientOptions) error {
 	})
 
 	socket.On("connect_error", func(args ...any) {
-		fmt.Println(append([]any{"Connection Error:"}, args...)...)
-
 		var connErr error
 		if len(args) > 0 {
 			if errVal, ok := args[0].(error); ok && errVal != nil {
@@ -201,8 +198,6 @@ func (c *Client) Authenticate(opts AuthenticatePayload) (*AuthenticatResponse, e
 		return nil, err
 	}
 
-	fmt.Println("Authenticate response:", results)
-
 	auth, ok := results[0]["auth"].(map[string]any)
 	if !ok || len(auth) == 0 {
 		return nil, fmt.Errorf("auth field not found in response")
@@ -304,19 +299,18 @@ func (c *Client) On(event string, listener MercuryListener) {
 		ack(nil, nil)
 	}
 
-	// socketEvent := toSocketName(event)
 	c.socket.On(event, handler)
 }
 
 func (c *Client) Off(event string, listeners ...MercuryListener) {
-	results, err := c.Emit("unregister-listeners::v2020_12_25", TargetAndPayload{
+	_, err := c.Emit("unregister-listeners::v2020_12_25", TargetAndPayload{
 		Payload: map[string]any{
 			"fullyQualifiedEventNames": []string{event},
 		},
 	})
 
 	if err != nil {
-		fmt.Println("Unregister listeners response error:", results, err)
+		// fmt.Println("Unregister listeners response error:", results, err)
 	}
 	c.socket.Off(event, nil)
 }
